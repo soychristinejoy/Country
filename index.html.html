@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guess the Flag - Summer Camp 2026</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(-45deg, #4158d0, #c850c0, #ffcc70, #ee7752, #e73c7e);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            color: white;
+            position: relative;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Confetti Layer Canvas */
+        #confetti-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 99;
+        }
+
+        .screen {
+            display: none;
+            height: 100vh;
+            width: 100vw;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* --- TITLE SCREEN STYLING --- */
+        #title-screen {
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: rgba(0,0,0,0.15);
+        }
+
+        .main-title {
+            font-size: 9rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            text-shadow: 0 12px 0 rgba(0,0,0,0.3), 0 0 40px rgba(255,255,255,0.7);
+            margin: 0 0 40px 0;
+            animation: titleEntrance 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-align: center;
+            z-index: 5;
+        }
+
+        @keyframes titleEntrance {
+            0% { transform: translateY(-150px) scale(0.8); opacity: 0; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+
+        .subtitle-area {
+            text-align: center;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 40px 80px;
+            border-radius: 30px;
+            border: 5px solid white;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+            animation: subtitleEntrance 1s ease-out 0.3s both;
+            z-index: 5;
+        }
+
+        @keyframes subtitleEntrance {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .camp-name {
+            font-size: 4.5rem;
+            font-weight: 800;
+            margin: 0;
+            color: #ffcc70; 
+            text-shadow: 0 4px 8px rgba(0,0,0,0.6);
+        }
+
+        .teacher-names {
+            font-size: 3rem;
+            margin: 25px 0 0 0;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .teacher-names span {
+            display: inline-block;
+            margin: 0 25px;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 5px 20px;
+            border-radius: 15px;
+        }
+
+        .start-btn {
+            margin-top: 50px;
+            padding: 25px 80px;
+            font-size: 3rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            color: white;
+            background-color: #2ed573;
+            border: 5px solid white;
+            border-radius: 60px;
+            cursor: pointer;
+            box-shadow: 0 12px 0 #1c8548, 0 20px 40px rgba(0,0,0,0.4);
+            transition: all 0.1s;
+            animation: subtitleEntrance 1s ease-out 0.6s both;
+            z-index: 5;
+        }
+
+        .start-btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 6px 0 #1c8548, 0 10px 20px rgba(0,0,0,0.4);
+        }
+
+        .decor-flag-img {
+            position: absolute;
+            width: 180px;
+            height: auto;
+            border-radius: 15px;
+            border: 5px solid white;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            opacity: 0;
+            animation: flagPicturePop 5s infinite ease-in-out;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        @keyframes flagPicturePop {
+            0% { transform: scale(0) rotate(-30deg); opacity: 0; }
+            15% { transform: scale(1.1) rotate(15deg); opacity: 1; }
+            20% { transform: scale(1) rotate(10deg); opacity: 1; }
+            85% { transform: scale(1) rotate(-10deg); opacity: 1; }
+            100% { transform: scale(0) rotate(30deg); opacity: 0; }
+        }
+
+        .f1 { top: 8%; left: 8%; animation-delay: 0.2s; }
+        .f2 { top: 12%; right: 8%; animation-delay: 2.2s; }
+        .f3 { bottom: 12%; left: 10%; animation-delay: 1.2s; }
+        .f4 { bottom: 8%; right: 10%; animation-delay: 3.5s; }
+        .f5 { top: 45%; left: 4%; animation-delay: 4.5s; }
+        .f6 { top: 42%; right: 4%; animation-delay: 2.8s; }
+
+        /* --- GAME ENGINE ARENA STYLING --- */
+        #game-screen {
+            flex-direction: column;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 50px;
+            background: rgba(0, 0, 0, 0.25);
+            backdrop-filter: blur(15px);
+            border-bottom: 3px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .score-box {
+            background: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            padding: 12px 35px;
+            border-radius: 20px;
+            text-align: center;
+            min-width: 180px;
+            border: 3px solid transparent;
+        }
+
+        #score-t1 { border-color: #ff4757; animation: pulseGlowT1 2s infinite alternate; }
+        #score-t2 { border-color: #2ed573; animation: pulseGlowT2 2s infinite alternate; }
+
+        @keyframes pulseGlowT1 { 0% { box-shadow: 0 0 15px #ff4757; } 100% { box-shadow: 0 0 35px #ff4757; } }
+        @keyframes pulseGlowT2 { 0% { box-shadow: 0 0 15px #2ed573; } 100% { box-shadow: 0 0 35px #2ed573; } }
+
+        .score-box h2 { margin: 0; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 2px;}
+        .score-box .score { font-size: 4rem; font-weight: 900; margin-top: 2px; }
+
+        #game-ui-area {
+            display: flex;
+            flex: 1;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 25px;
+            gap: 20px;
+        }
+
+        .team-side {
+            width: 39%;
+            height: 85%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 25px;
+            padding: 25px 20px;
+            border: 2px solid rgba(255,255,255,0.4);
+            backdrop-filter: blur(10px);
+        }
+
+        .center-flag-zone {
+            width: 20%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .flag-card {
+            background: white;
+            padding: 15px;
+            border-radius: 25px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+            width: 100%;
+            text-align: center;
+        }
+
+        .flag-img {
+            width: 100%;
+            height: auto;
+            max-height: 150px;
+            border-radius: 12px;
+            border: 2px solid #eee;
+        }
+
+        .answer-slots, .jumbled-pool {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            width: 100%;
+            flex-wrap: nowrap; 
+            overflow: hidden;
+        }
+
+        .answer-slots {
+            min-height: 80px;
+            margin-bottom: 25px;
+        }
+
+        .jumbled-pool {
+            background: rgba(0,0,0,0.2);
+            border-radius: 20px;
+            min-height: 120px;
+            padding: 10px;
+        }
+
+        .slot {
+            aspect-ratio: 1/1;
+            border: 4px dashed rgba(255,255,255,0.6);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            background: rgba(255,255,255,0.2);
+            cursor: pointer;
+        }
+
+        .slot.filled {
+            border-style: solid;
+            color: white;
+            border-color: #111;
+        }
+
+        .letter-box {
+            aspect-ratio: 1/1;
+            background: white;
+            color: #111;
+            border: 4px solid #111;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            box-shadow: 0 6px 0 #111;
+            cursor: pointer;
+        }
+
+        .slot.space-slot {
+            border: none;
+            background: rgba(0,0,0,0.3);
+            cursor: default;
+        }
+
+        .btn-panel { display: flex; gap: 15px; margin-top: 20px; justify-content: center; }
+        .control-btn {
+            padding: 12px 25px; font-size: 1.2rem; font-weight: bold;
+            border: 3px solid #111; border-radius: 12px; cursor: pointer;
+            box-shadow: 0 4px 0 #111; text-transform: uppercase;
+        }
+        .clear-btn { background: #ffbe76; color: #111; }
+        .next-btn { background: #48dbfb; color: #111; font-size: 1.4rem; padding: 15px 30px; }
+
+        /* --- CLEAN BACKGROUND GLOW OVERLAY (Not Shiny) --- */
+        #win-overlay {
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%) scale(0);
+            background: rgba(0, 0, 0, 0.85);
+            color: white; 
+            padding: 50px 100px; 
+            border-radius: 30px; 
+            font-size: 4.5rem; 
+            font-weight: 900;
+            z-index: 50; 
+            pointer-events: none; 
+            transition: transform 0.3s ease-out;
+            text-align: center;
+            border: 6px solid #ffd700;
+            box-shadow: 0 0 60px rgba(255, 215, 0, 0.5); /* Smooth, elegant static glow */
+        }
+        
+        .glow-active {
+            animation: elegantPulse 2s infinite alternate ease-in-out;
+        }
+
+        @keyframes elegantPulse {
+            0% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.4); transform: translate(-50%, -50%) scale(1); }
+            100% { box-shadow: 0 0 80px rgba(255, 215, 0, 0.8); transform: translate(-50%, -50%) scale(1.05); }
+        }
+
+        #round-indicator {
+            margin: 8px 0 0 0; font-weight: bold; font-size: 1.2rem; color: #fff; background: rgba(0,0,0,0.4);
+            padding: 5px 25px; border-radius: 12px; display: inline-block;
+        }
+
+        #game-over-screen {
+            display: none; position: fixed; top:0; left:0; width:100vw; height:100vh;
+            background: rgba(0,0,0,0.96); z-index: 100; flex-direction: column;
+            align-items: center; justify-content: center;
+        }
+        #game-over-screen h1 { font-size: 5rem; color: #ffd700; }
+        .restart-btn {
+            padding: 15px 50px; font-size: 2rem; border: none; background: #2ed573; color: white;
+            border-radius: 15px; cursor: pointer; font-weight: bold; margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Canvas for rendering active live confetti explosions -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- ============================================ -->
+    <!-- TITLE SCREEN -->
+    <!-- ============================================ -->
+    <div id="title-screen" class="screen active">
+        <img class="decor-flag-img f1" src="https://flagcdn.com/w320/gb.png" alt="UK">
+        <img class="decor-flag-img f2" src="https://flagcdn.com/w320/sg.png" alt="Singapore">
+        <img class="decor-flag-img f3" src="https://flagcdn.com/w320/in.png" alt="India">
+        <img class="decor-flag-img f4" src="https://flagcdn.com/w320/us.png" alt="USA">
+        <img class="decor-flag-img f5" src="https://flagcdn.com/w320/es.png" alt="Spain">
+        <img class="decor-flag-img f6" src="https://flagcdn.com/w320/jp.png" alt="Japan">
+
+        <h1 class="main-title">Guess the Flag</h1>
+
+        <div class="subtitle-area">
+            <p class="camp-name">Summer Camp 2026</p>
+            <p class="teacher-names">
+                <span>Teacher Christine</span>
+                &
+                <span>Teacher Jessie</span>
+            </p>
+        </div>
+
+        <button class="start-btn" onclick="startGame()">Start Game</button>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- MAIN GAME ARENA SCREEN -->
+    <!-- ============================================ -->
+    <div id="game-screen" class="screen">
+        <header>
+            <div class="score-box" id="score-t1">
+                <h2>Team 1</h2>
+                <div class="score" id="t1-score-val">0</div>
+            </div>
+            <div style="text-align: center;">
+                <h1 style="margin:0; font-size: 2.5rem; text-shadow: 2px 2px 8px rgba(0,0,0,0.5);">🚩 Spelling Race 🚩</h1>
+                <p id="round-indicator">Slide 1 / 9</p>
+            </div>
+            <div class="score-box" id="score-t2">
+                <h2>Team 2</h2>
+                <div class="score" id="t2-score-val">0</div>
+            </div>
+        </header>
+
+        <div id="win-overlay">TEAM 1 SCORES!</div>
+
+        <div id="game-ui-area">
+            <!-- Team 1 Side Area -->
+            <div class="team-side" id="team1-zone">
+                <h3 style="text-align:center; color: #ff4757; font-size: 1.8rem; margin: 0 0 10px 0;">Team 1</h3>
+                <div class="answer-slots" id="t1-slots"></div>
+                <div class="jumbled-pool" id="t1-pool"></div>
+                <div class="btn-panel"><button class="control-btn clear-btn" onclick="clearAnswer('t1')">Reset Box</button></div>
+            </div>
+
+            <!-- Center Flag Column -->
+            <div class="center-flag-zone">
+                <div class="flag-card"><img src="" class="flag-img" id="current-flag-img"></div>
+                <button class="control-btn next-btn" onclick="nextSlide()">➡️ Next Word</button>
+            </div>
+
+            <!-- Team 2 Side Area -->
+            <div class="team-side" id="team2-zone">
+                <h3 style="text-align:center; color: #2ed573; font-size: 1.8rem; margin: 0 0 10px 0;">Team 2</h3>
+                <div class="answer-slots" id="t2-slots"></div>
+                <div class="jumbled-pool" id="t2-pool"></div>
+                <div class="btn-panel"><button class="control-btn clear-btn" onclick="clearAnswer('t2')">Reset Box</button></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-over-screen">
+        <h1 id="game-result-text">GAME OVER</h1>
+        <button class="restart-btn" onclick="location.reload()">Play Again</button>
+    </div>
+
+    <script>
+        const gameSlides = [
+            { name: "The UK", code: "gb" },
+            { name: "Singapore", code: "sg" },
+            { name: "India", code: "in" },
+            { name: "The USA", code: "us" },
+            { name: "Australia", code: "au" },
+            { name: "Spain", code: "es" },
+            { name: "Taiwan", code: "tw" },
+            { name: "Japan", code: "jp" },
+            { name: "Indonesia", code: "id" }
+        ];
+
+        let currentSlideIndex = 0;
+        let scores = { team1: 0, team2: 0 };
+        let roundActive = false;
+        
+        let t1CurrentGuess = [];
+        let t2CurrentGuess = [];
+        let t1Jumbled = [];
+        let t2Jumbled = [];
+
+        /* --- CONFETTI GENERATOR ENGINE --- */
+        const canvas = document.getElementById("confetti-canvas");
+        const ctx = canvas.getContext("2d");
+        let confettiParticles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        function spawnConfettiShower() {
+            const colors = ["#ffd700", "#ff4757", "#2ed573", "#1e90ff", "#eccc68", "#ff6b81", "#7bed9f", "#ffffff"];
+            // Spawn 150 cascading pieces
+            for (let i = 0; i < 150; i++) {
+                confettiParticles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * -canvas.height - 20, // start above viewport
+                    size: Math.random() * 12 + 8,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    speedX: Math.random() * 6 - 3,
+                    speedY: Math.random() * 5 + 4,
+                    rotation: Math.random() * 360,
+                    rotationSpeed: Math.random() * 4 - 2
+                });
+            }
+        }
+
+        function updateAndRenderConfetti() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = confettiParticles.length - 1; i >= 0; i--) {
+                let p = confettiParticles[i];
+                p.x += p.speedX;
+                p.y += p.speedY;
+                p.rotation += p.rotationSpeed;
+
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate((p.rotation * Math.PI) / 180);
+                ctx.fillStyle = p.color;
+                ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                ctx.restore();
+
+                // Clear particles that drop completely past screen bottom base
+                if (p.y > canvas.height) {
+                    confettiParticles.splice(i, 1);
+                }
+            }
+            requestAnimationFrame(updateAndRenderConfetti);
+        }
+        requestAnimationFrame(updateAndRenderConfetti);
+
+
+        function startGame() {
+            document.getElementById('title-screen').classList.remove('active');
+            document.getElementById('game-screen').classList.add('active');
+            currentSlideIndex = 0;
+            scores = { team1: 0, team2: 0 };
+            loadSlide();
+        }
+
+        function loadSlide() {
+            if (currentSlideIndex >= gameSlides.length) {
+                endGame();
+                return;
+            }
+
+            roundActive = true;
+            const currentData = gameSlides[currentSlideIndex];
+            
+            document.getElementById('current-flag-img').src = `https://flagcdn.com/w320/${currentData.code}.png`;
+            document.getElementById('round-indicator').textContent = `Slide ${currentSlideIndex + 1} / ${gameSlides.length}`;
+
+            let pureLetters = currentData.name.replace(/\s+/g, '').toUpperCase().split('');
+            t1Jumbled = shuffle(pureLetters);
+            t2Jumbled = shuffle(pureLetters);
+            t1CurrentGuess = [];
+            t2CurrentGuess = [];
+
+            renderBoard('t1');
+            renderBoard('t2');
+        }
+
+        function renderBoard(team) {
+            const isT1 = team === 't1';
+            const targetName = gameSlides[currentSlideIndex].name.toUpperCase();
+            const guessArr = isT1 ? t1CurrentGuess : t2CurrentGuess;
+            const poolArr = isT1 ? t1Jumbled : t2Jumbled;
+
+            const totalChars = targetName.length;
+            const pureLength = targetName.replace(/\s+/g, '').length;
+            
+            let boxWidth = 70;
+            let fontSize = 2.8;
+            if (totalChars > 8) {
+                boxWidth = Math.floor(550 / totalChars);
+                fontSize = (boxWidth / 25).toFixed(1);
+            }
+
+            const slotsContainer = document.getElementById(`${team}-slots`);
+            slotsContainer.innerHTML = '';
+            
+            let guessPointer = 0;
+            for (let i = 0; i < targetName.length; i++) {
+                const char = targetName[i];
+                const slot = document.createElement('div');
+                slot.style.width = `${boxWidth}px`;
+                slot.style.fontSize = `${fontSize}rem`;
+
+                if (char === ' ') {
+                    slot.className = 'slot space-slot';
+                    slot.style.background = 'rgba(0,0,0,0.3)';
+                    slot.style.border = 'none';
+                    slot.style.width = `${Math.floor(boxWidth * 0.5)}px`;
+                } else {
+                    slot.className = 'slot';
+                    if (guessArr[guessPointer]) {
+                        slot.textContent = guessArr[guessPointer];
+                        slot.className += ' filled';
+                        slot.style.background = isT1 ? '#ff4757' : '#2ed573';
+                        slot.style.color = 'white';
+                        
+                        let idxToRemove = guessPointer; 
+                        slot.onclick = () => removeLetter(team, idxToRemove);
+                    }
+                    guessPointer++;
+                }
+                slotsContainer.appendChild(slot);
+            }
+
+            const poolContainer = document.getElementById(`${team}-pool`);
+            poolContainer.innerHTML = '';
+            
+            let poolBoxWidth = pureLength > 8 ? Math.floor(500 / pureLength) : 70;
+            let poolFontSize = pureLength > 8 ? (poolBoxWidth / 25).toFixed(1) : 2.8;
+
+            poolArr.forEach((letter, index) => {
+                if (letter !== null) {
+                    const box = document.createElement('div');
+                    box.className = 'letter-box';
+                    box.style.width = `${poolBoxWidth}px`;
+                    box.style.fontSize = `${poolFontSize}rem`;
+                    box.textContent = letter;
+                    box.onclick = () => selectLetter(team, index);
+                    poolContainer.appendChild(box);
+                }
+            });
+
+            if (roundActive && guessArr.join('') === targetName.replace(/\s+/g, '')) {
+                triggerRoundWin(team);
+            }
+        }
+
+        function selectLetter(team, index) {
+            const isT1 = team === 't1';
+            const pool = isT1 ? t1Jumbled : t2Jumbled;
+            const guess = isT1 ? t1CurrentGuess : t2CurrentGuess;
+            guess.push(pool[index]);
+            pool[index] = null; 
+            renderBoard(team);
+        }
+
+        function removeLetter(team, guessIndex) {
+            const isT1 = team === 't1';
+            const pool = isT1 ? t1Jumbled : t2Jumbled;
+            const guess = isT1 ? t1CurrentGuess : t2CurrentGuess;
+            const letter = guess.splice(guessIndex, 1)[0];
+            const emptyIdx = pool.indexOf(null);
+            if (emptyIdx !== -1) pool[emptyIdx] = letter; else pool.push(letter);
+            renderBoard(team);
+        }
+
+        function clearAnswer(team) {
+            const currentData = gameSlides[currentSlideIndex];
+            let pureLetters = currentData.name.replace(/\s+/g, '').toUpperCase().split('');
+            if (team === 't1') { t1Jumbled = shuffle(pureLetters); t1CurrentGuess = []; }
+            else { t2Jumbled = shuffle(pureLetters); t2CurrentGuess = []; }
+            renderBoard(team);
+        }
+
+        function nextSlide() {
+            if (!roundActive) return;
+            currentSlideIndex++;
+            loadSlide();
+        }
+
+        function triggerRoundWin(team) {
+            roundActive = false;
+            if (team === 't1') { scores.team1++; document.getElementById('t1-score-val').textContent = scores.team1; }
+            else { scores.team2++; document.getElementById('t2-score-val').textContent = scores.team2; }
+
+            // Fire off the confetti blast!
+            spawnConfettiShower();
+
+            // Set smooth glow overlay parameters
+            const overlay = document.getElementById('win-overlay');
+            overlay.textContent = `TEAM ${team === 't1' ? '1' : '2'} SCORES!`;
+            overlay.style.transform = "translate(-50%, -50%) scale(1)";
+            overlay.classList.add('glow-active');
+
+            setTimeout(() => {
+                overlay.style.transform = "translate(-50%, -50%) scale(0)";
+                overlay.classList.remove('glow-active');
+                currentSlideIndex++;
+                loadSlide();
+            }, 2500);
+        }
+
+        function endGame() {
+            document.getElementById('game-screen').classList.remove('active');
+            document.getElementById('game-over-screen').style.display = 'flex';
+            let resText = scores.team1 === scores.team2 ? "🤝 TIE MATCH! 🤝" : scores.team1 > scores.team2 ? "🏆 TEAM 1 WINS! 🏆" : "🏆 TEAM 2 WINS! 🏆";
+            document.getElementById('game-result-text').textContent = resText + ` (${scores.team1} - ${scores.team2})`;
+        }
+
+        function shuffle(a) { let arr = [...a]; for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
+    </script>
+</body>
+</html>
